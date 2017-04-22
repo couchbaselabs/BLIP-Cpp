@@ -36,8 +36,6 @@
 		279976301E94518200B27639 /* BLIP.hh in Headers */ = {isa = PBXBuildFile; fileRef = 2799762F1E94518200B27639 /* BLIP.hh */; };
 		27CCC7A91E524F0B00CE1989 /* Logging.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27CCC7A51E524F0B00CE1989 /* Logging.cc */; };
 		27CCC7AA1E524F0B00CE1989 /* Logging.hh in Headers */ = {isa = PBXBuildFile; fileRef = 27CCC7A61E524F0B00CE1989 /* Logging.hh */; };
-		27CCC7AB1E524F0B00CE1989 /* PlatformIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27CCC7A71E524F0B00CE1989 /* PlatformIO.cc */; };
-		27CCC7AC1E524F0B00CE1989 /* PlatformIO.hh in Headers */ = {isa = PBXBuildFile; fileRef = 27CCC7A81E524F0B00CE1989 /* PlatformIO.hh */; };
 		27CCC7B31E5251C900CE1989 /* libevent_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 27CCC7AD1E524F8000CE1989 /* libevent_core.a */; };
 		27CCC7B41E5251CC00CE1989 /* libevent_pthreads.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 27CCC7B11E524FB500CE1989 /* libevent_pthreads.a */; };
 		27CCC7B51E5251CE00CE1989 /* libevent_extra.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 27CCC7AF1E524FA200CE1989 /* libevent_extra.a */; };
@@ -444,7 +442,6 @@
 				27EF6A5F1E28587A004748DF /* cdecode.h in Headers */,
 				272850FD1EA02B49009CA22F /* ThreadedMailbox.hh in Headers */,
 				27491C941E7AFCED001DC54B /* WebSocketProtocol.hh in Headers */,
-				27CCC7AC1E524F0B00CE1989 /* PlatformIO.hh in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -548,7 +545,6 @@
 				27EF69DD1E28260D004748DF /* Message.cc in Sources */,
 				27EF6A561E2857F7004748DF /* Writer.cc in Sources */,
 				272850F01E9D4DC7009CA22F /* MockProvider.cc in Sources */,
-				27CCC7AB1E524F0B00CE1989 /* PlatformIO.cc in Sources */,
 				27EF6A601E28587A004748DF /* cencode.c in Sources */,
 				27EF6A5E1E28587A004748DF /* cdecode.c in Sources */,
 				2759DC241E70890300F3C4B2 /* zlibtop.cpp in Sources */,
