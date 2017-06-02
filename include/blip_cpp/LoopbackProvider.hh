@@ -10,6 +10,7 @@
 #include "MockProvider.hh"
 #include <atomic>
 #include <chrono>
+#include <mutex>
 
 
 namespace litecore { namespace websocket {
@@ -48,22 +49,37 @@ namespace litecore { namespace websocket {
         { }
 
         virtual void _connect() override {
-            if (_peer && !_isOpen)
+            if (_peer && !_isOpen) {
                 MockWebSocket::_connect();
+            }
         }
 
         virtual void _connectToPeer(Retained<LoopbackWebSocket> peer,
                                     fleeceapi::AllocedDict responseHeaders)
             {
+            if (!hasDelegate()) {
+                // Reschedule because we can't continue without a delegate
+                enqueueAfter(_rescheduleLatency, &LoopbackWebSocket::_connectToPeer, peer, responseHeaders);
+                return;
+            }
+
             if (peer != _peer) {
                 assert(!_peer);
                 _peer = peer;
                 _simulateHTTPResponse(200, responseHeaders);
                 _simulateConnected();
             }
+
+            _readyToUse = true;
         }
 
         virtual void _send(fleece::alloc_slice msg, bool binary) override {
+            if (!_readyToUse) {
+                // Reschedule, we are not ready yet!
+                enqueueAfter(_rescheduleLatency, &LoopbackWebSocket::_send, msg, binary);
+                return;
+            }
+
             if (_peer) {
                 LogDebug(WSMock, "%s SEND: %s", name.c_str(), formatMsg(msg, binary).c_str());
                 _peer->simulateReceived(msg, binary, _latency);
@@ -73,6 +89,12 @@ namespace litecore { namespace websocket {
         }
 
         virtual void _simulateReceived(fleece::alloc_slice msg, bool binary) override {
+            if (!_readyToUse) {
+                // Reschedule, we are not ready yet!
+                enqueueAfter(_rescheduleLatency, &LoopbackWebSocket::_simulateReceived, msg, binary);
+                return;
+            }
+
             MockWebSocket::_simulateReceived(msg, binary);
             _peer->ack(msg.size);
         }
@@ -88,6 +110,12 @@ namespace litecore { namespace websocket {
         }
 
         virtual void _close(int status, fleece::alloc_slice message) override {
+            if (!_readyToUse) {
+                // Reschedule, we are not ready yet!
+                enqueueAfter(_rescheduleLatency, &LoopbackWebSocket::_close, status, message);
+                return;
+            }
+
             std::string messageStr(message);
             LogTo(WSMock, "%s CLOSE; status=%d", name.c_str(), status);
             assert(_peer);
@@ -102,8 +130,10 @@ namespace litecore { namespace websocket {
 
     private:
         actor::delay_t _latency {0.0};
+        actor::delay_t _rescheduleLatency{ 0.5 };
         Retained<LoopbackWebSocket> _peer;
         std::atomic<size_t> _bufferedBytes {0};
+        bool _readyToUse{ false };
     };
 
 

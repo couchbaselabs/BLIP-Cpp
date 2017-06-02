@@ -141,6 +141,8 @@ namespace litecore { namespace websocket {
 
         /** Clears the delegate; any future calls to delegate() will fail. Call after closing. */
         void clearDelegate()                        {_delegate = nullptr;}
+
+        bool hasDelegate() { return _delegate != nullptr; }
         
     private:
         const Address _address;
