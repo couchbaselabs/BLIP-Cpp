@@ -292,7 +292,6 @@ namespace litecore { namespace websocket {
         _pingTimer->fireAfter(chrono::seconds(heartbeatInterval()));
     }
 
-
     // timer callback
     void WebSocketImpl::sendPing() {
         {
@@ -360,6 +359,7 @@ namespace litecore { namespace websocket {
             _closeMessage = message;
             sendOp(message, uWS::CLOSE);
         }
+        _pingTimer->stop();
         _pingTimer.reset();
         return true;
     }
@@ -381,6 +381,7 @@ namespace litecore { namespace websocket {
 
     // Called when the underlying socket closes.
     void WebSocketImpl::onClose(CloseStatus status) {
+        _pingTimer->stop();
         _pingTimer.reset();
         if (_framing) {
             lock_guard<mutex> lock(_mutex);
