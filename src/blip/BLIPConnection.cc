@@ -46,7 +46,8 @@ namespace litecore { namespace blip {
     static const size_t kDefaultFrameSize = 4096;       // Default size of frame
     static const size_t kBigFrameSize = 16384;          // Max size of frame
 
-    static const auto kDefaultCompressionLevel = (Deflater::CompressionLevel)6;
+    // static const auto kDefaultCompressionLevel = (Deflater::CompressionLevel)6;
+    static const auto kDefaultCompressionLevel = (Deflater::CompressionLevel)0; // <-- disable compression by default
 
     const char* const kMessageTypeNames[8] = {"REQ", "RES", "ERR", "?3?",
                                               "ACKREQ", "AKRES", "?6?", "?7?"};
@@ -327,8 +328,11 @@ namespace litecore { namespace blip {
                 {
                     // Set up a buffer for the frame contents:
                     size_t maxSize = kDefaultFrameSize;
-                    if (msg->urgent() || _outbox.empty() || !_outbox.front()->urgent())
-                        maxSize = kBigFrameSize;
+
+                    // Experiment related to https://github.com/couchbase/sync_gateway/issues/3634
+                            // does reducing maxSize fix it?
+                    //                    if (msg->urgent() || _outbox.empty() || !_outbox.front()->urgent())
+//                        maxSize = kBigFrameSize;
 
                     if (!_frameBuf)
                         _frameBuf.reset(new uint8_t[kMaxVarintLen64 + 1 + 4 + kBigFrameSize]);
@@ -336,6 +340,7 @@ namespace litecore { namespace blip {
                     WriteUVarInt(&out, msg->_number);
                     auto flagsPos = (FrameFlags*)out.buf;
                     out.moveStart(1);
+                    slice firstBody(out.buf, 1);
 
                     // Ask the MessageOut to write data to fill the buffer:
                     auto prevBytesSent = msg->_bytesSent;
@@ -344,13 +349,23 @@ namespace litecore { namespace blip {
                     slice frame(_frameBuf.get(), out.buf);
                     bytesWritten += frame.size;
 
-                    logVerbose("    Sending frame: %s #%llu %c%c%c%c, bytes %u--%u",
+                    // Debugging -- dump the checksum and first and last byte
+                    slice checksum(frame.offset(frame.size - 4), 4);
+                    // slice first(frame.buf, 1);
+                    slice last(frame.offset(frame.size - 5), 1);
+                    auto checksumStr = checksum.hexString();
+                    auto firstStr = firstBody.hexString();
+                    auto lastStr = last.hexString();
+                    logVerbose("    Checksum: %s, First byte: %s, Last byte: %s",
+                               checksumStr.c_str(), firstStr.c_str(), lastStr.c_str());
+
+                    logVerbose("    Sending frame: %s #%llu %c%c%c%c, bytes %u--%u, size: %u",
                                kMessageTypeNames[frameFlags & kTypeMask], msg->number(),
                                (frameFlags & kMoreComing ? 'M' : '-'),
                                (frameFlags & kUrgent ? 'U' : '-'),
                                (frameFlags & kNoReply ? 'N' : '-'),
                                (frameFlags & kCompressed ? 'C' : '-'),
-                               prevBytesSent, msg->_bytesSent - 1);
+                               prevBytesSent, msg->_bytesSent - 1, frame.size);
                     //logVerbose("    %s", frame.hexString().c_str());
                     // Write it to the WebSocket:
                     _writeable = _webSocket->send(frame);
@@ -373,7 +388,7 @@ namespace litecore { namespace blip {
                 }
             }
             _totalBytesWritten += bytesWritten;
-            logVerbose("...Wrote %zu bytes to WebSocket (writeable=%d)",
+            logVerbose("...Wrote (%zu) bytes to WebSocket (writeable=%d)",
                        bytesWritten, _writeable);
         }
 
