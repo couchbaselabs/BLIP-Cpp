@@ -40,6 +40,7 @@
 
 namespace litecore { namespace actor {
     class Actor;
+    class AsyncProviderBase;
 
 
     //// Some support code for asynchronize(), from http://stackoverflow.com/questions/42124866
@@ -82,6 +83,9 @@ namespace litecore { namespace actor {
         unsigned eventCount() const                         {return _mailbox.eventCount();}
 
         std::string actorName() const                       {return _mailbox.name();}
+
+        /** The Actor that's currently running, else nullptr */
+        static Actor* currentActor()                        {return Mailbox::currentActor();}
 
     protected:
         /** Constructs an Actor.
@@ -133,9 +137,16 @@ namespace litecore { namespace actor {
             _mailbox.logStats();
         }
 
+        void wakeAsyncProvider(AsyncProviderBase *provider) {
+            enqueue(&Actor::_wakeAsyncProvider, provider);
+        }
+
     private:
+        void _wakeAsyncProvider(AsyncProviderBase *provider);
+
         friend class ThreadedMailbox;
         friend class GCDMailbox;
+        friend class AsyncProviderBase;
 
         template <class ACTOR, class ITEM>
         friend class Batcher;
