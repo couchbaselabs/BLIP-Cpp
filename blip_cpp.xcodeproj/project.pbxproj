@@ -28,6 +28,7 @@
 		27AE22BA1FBE559100C40EB9 /* Codec.hh in Headers */ = {isa = PBXBuildFile; fileRef = 27AE22B81FBE559100C40EB9 /* Codec.hh */; };
 		27AE22BB1FBE559100C40EB9 /* Codec.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27AE22B91FBE559100C40EB9 /* Codec.cc */; };
 		27C59BAB2132232C003C8492 /* Async.hh in Headers */ = {isa = PBXBuildFile; fileRef = 27C59BA92132232C003C8492 /* Async.hh */; };
+		27C59BB421371792003C8492 /* Async.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27C59BB321371792003C8492 /* Async.cc */; };
 		27CCC7A91E524F0B00CE1989 /* Logging.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27CCC7A51E524F0B00CE1989 /* Logging.cc */; };
 		27CCC7AA1E524F0B00CE1989 /* Logging.hh in Headers */ = {isa = PBXBuildFile; fileRef = 27CCC7A61E524F0B00CE1989 /* Logging.hh */; };
 		27CCC7AB1E524F0B00CE1989 /* PlatformIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27CCC7A71E524F0B00CE1989 /* PlatformIO.cc */; };
@@ -121,6 +122,7 @@
 		27AE22B81FBE559100C40EB9 /* Codec.hh */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Codec.hh; sourceTree = "<group>"; };
 		27AE22B91FBE559100C40EB9 /* Codec.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Codec.cc; sourceTree = "<group>"; };
 		27C59BA92132232C003C8492 /* Async.hh */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Async.hh; sourceTree = "<group>"; };
+		27C59BB321371792003C8492 /* Async.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Async.cc; sourceTree = "<group>"; };
 		27CCC7A51E524F0B00CE1989 /* Logging.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Logging.cc; sourceTree = "<group>"; };
 		27CCC7A61E524F0B00CE1989 /* Logging.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Logging.hh; sourceTree = "<group>"; };
 		27CCC7A71E524F0B00CE1989 /* PlatformIO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PlatformIO.cc; sourceTree = "<group>"; };
@@ -291,6 +293,7 @@
 				2773FD031E69FE2000108780 /* ActorProperty.cc */,
 				2773FD041E69FE2000108780 /* ActorProperty.hh */,
 				27C59BA92132232C003C8492 /* Async.hh */,
+				27C59BB321371792003C8492 /* Async.cc */,
 				2726F62D207E9F0B007F2D02 /* Batcher.hh */,
 				27EF6A661E2858E7004748DF /* Channel.cc */,
 				27EF6A671E2858E7004748DF /* Channel.hh */,
@@ -505,6 +508,7 @@
 				272850FC1EA02B49009CA22F /* ThreadedMailbox.cc in Sources */,
 				272850731E95BCCF009CA22F /* MessageOut.cc in Sources */,
 				27EF69DF1E28260D004748DF /* BLIPConnection.cc in Sources */,
+				27C59BB421371792003C8492 /* Async.cc in Sources */,
 				27DF27F120851FFD007FD912 /* Actor.cc in Sources */,
 				27EF69DD1E28260D004748DF /* Message.cc in Sources */,
 				27EF6A561E2857F7004748DF /* Writer.cc in Sources */,

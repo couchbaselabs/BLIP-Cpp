@@ -18,6 +18,7 @@
 
 #pragma once
 #include "ThreadedMailbox.hh"
+#include "Async.hh"
 #include <assert.h>
 #include <chrono>
 #include <functional>
@@ -40,7 +41,7 @@
 
 namespace litecore { namespace actor {
     class Actor;
-    class AsyncProviderBase;
+    class AsyncContext;
 
 
     //// Some support code for asynchronize(), from http://stackoverflow.com/questions/42124866
@@ -137,16 +138,24 @@ namespace litecore { namespace actor {
             _mailbox.logStats();
         }
 
-        void wakeAsyncProvider(AsyncProviderBase *provider) {
-            enqueue(&Actor::_wakeAsyncProvider, provider);
+
+        /** Body of an async method: Creates an AsyncProvider from the lambda given,
+            then returns an Async that refers to that provider. */
+        template <class T, class LAMBDA>
+        Async<T> _asyncBody(const LAMBDA &bodyFn) {
+            return Async<T>( new AsyncProvider<T>(this, bodyFn) );
+        }
+
+        void wakeAsyncContext(AsyncContext *context) {
+            enqueue(&Actor::_wakeAsyncContext, context);
         }
 
     private:
-        void _wakeAsyncProvider(AsyncProviderBase *provider);
+        void _wakeAsyncContext(AsyncContext *provider);
 
         friend class ThreadedMailbox;
         friend class GCDMailbox;
-        friend class AsyncProviderBase;
+        friend class AsyncContext;
 
         template <class ACTOR, class ITEM>
         friend class Batcher;

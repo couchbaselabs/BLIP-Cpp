@@ -18,7 +18,6 @@
 //
 
 #include "Actor.hh"
-#include "Async.hh"
 #include "Logging.hh"
 
 
@@ -27,10 +26,5 @@ namespace litecore { namespace actor {
     void Actor::caughtException(const std::exception &x) {
         Warn("Caught exception in Actor %s: %s", actorName().c_str(), x.what());
     }
-
-    void Actor::_wakeAsyncProvider(AsyncProviderBase *provider) {
-        provider->next();
-    }
-
 
 } }
