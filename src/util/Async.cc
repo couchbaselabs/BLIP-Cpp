@@ -70,7 +70,7 @@ namespace litecore { namespace actor {
         assert(async == _calling);
         if (_waitingActor) {
             fleece::Retained<Actor> waitingActor = std::move(_waitingActor);
-            waitingActor->wakeAsyncContext(this);
+            waitingActor->wakeAsyncContext(this);       // queues the next() call on its Mailbox
         } else {
             next();
         }

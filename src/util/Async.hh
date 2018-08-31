@@ -197,7 +197,7 @@ namespace litecore { namespace actor {
         fleece::Retained<AsyncContext> _observer;           // Dependent context waiting on me
         Actor *_actor;                                      // Owning actor, if any
         fleece::Retained<Actor> _waitingActor;              // Actor that's waiting, if any
-        fleece::Retained<AsyncContext> _waitingSelf;
+        fleece::Retained<AsyncContext> _waitingSelf;        // Keeps `this` from being freed
 
 #if DEBUG
     public:
@@ -301,7 +301,7 @@ namespace litecore { namespace actor {
         bool ready() const                                          {return _context->ready();}
 
     protected:
-        fleece::Retained<AsyncContext> _context;
+        fleece::Retained<AsyncContext> _context;        // The AsyncProvider that owns my value
 
         friend struct AsyncState;
     };
@@ -321,12 +321,6 @@ namespace litecore { namespace actor {
         :AsyncBase(provider)
         { }
 
-        const T& result() const             {return ((AsyncProvider<T>*)_context.get())->result();}
-
-        static fleece::Retained<AsyncProvider<T>> provider() {
-            return AsyncProvider<T>::create();
-        }
-
         template <class LAMBDA>
         Async(Actor *actor, const LAMBDA& bodyFn)
         :Async( new AsyncProvider<T>(actor, bodyFn) )
@@ -334,10 +328,29 @@ namespace litecore { namespace actor {
             _context->start();
         }
 
-        // Used by Async<T>::wait()
+        /** Returns a new AsyncProvider<T>. */
+        static fleece::Retained<AsyncProvider<T>> provider() {
+            return AsyncProvider<T>::create();
+        }
+
+        const T& result() const             {return ((AsyncProvider<T>*)_context.get())->result();}
+
+        /** Invokes the callback when this Async's result becomes ready,
+            or immediately if it's ready now. */
+        template <class LAMBDA>
+        void wait(LAMBDA callback) {
+            if (ready())
+                callback(result());
+            else
+                (void) new AsyncWaiter(_context, callback);
+        }
+
+
+        // Internal class used by wait(), above
         class AsyncWaiter : public AsyncContext {
         public:
-            AsyncWaiter(AsyncContext *context, std::function<void(T)> callback)
+            template <class LAMBDA>
+            AsyncWaiter(AsyncContext *context, LAMBDA callback)
             :AsyncContext(nullptr)
             ,_callback(callback)
             {
@@ -355,17 +368,10 @@ namespace litecore { namespace actor {
         private:
             std::function<void(T)> _callback;
         };
-
-
-        void wait(std::function<void(T)> callback) {
-            if (ready())
-                callback(result());
-            else
-                (void) new AsyncWaiter(_context, callback);
-        }
     };
 
 
+    // Specialization of Async<> for functions with no result
     template <>
     class Async<void> : public AsyncBase {
     public:
