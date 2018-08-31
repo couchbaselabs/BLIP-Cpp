@@ -58,6 +58,7 @@ namespace litecore { namespace actor {
 
 #ifdef ACTORS_USE_GCD
     using Mailbox = GCDMailbox;
+    #define ACTOR_BIND_METHOD0(RCVR, METHOD)        ^{ ((RCVR)->*METHOD)(); }
     #define ACTOR_BIND_METHOD(RCVR, METHOD, ARGS)   ^{ ((RCVR)->*METHOD)(ARGS...); }
     #define ACTOR_BIND_FN(FN, ARGS)                 ^{ FN(ARGS...); }
 #else
@@ -143,16 +144,14 @@ namespace litecore { namespace actor {
             then returns an Async that refers to that provider. */
         template <class T, class LAMBDA>
         Async<T> _asyncBody(const LAMBDA &bodyFn) {
-            return Async<T>( new AsyncProvider<T>(this, bodyFn) );
+            return Async<T>(this, bodyFn);
         }
 
         void wakeAsyncContext(AsyncContext *context) {
-            enqueue(&Actor::_wakeAsyncContext, context);
+            _mailbox.enqueue(ACTOR_BIND_METHOD0(context, &AsyncContext::next));
         }
 
     private:
-        void _wakeAsyncContext(AsyncContext *provider);
-
         friend class ThreadedMailbox;
         friend class GCDMailbox;
         friend class AsyncContext;

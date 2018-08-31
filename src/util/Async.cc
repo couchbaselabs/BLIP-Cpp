@@ -53,17 +53,8 @@ namespace litecore { namespace actor {
         _observer = p;
     }
 
-    void AsyncContext::wakeUp(AsyncContext *async) {
-        assert(async == _calling);
-        if (_waitingActor) {
-            fleece::Retained<Actor> waitingActor = std::move(_waitingActor);
-            waitingActor->wakeAsyncContext(this);
-        } else {
-            next();
-        }
-    }
-
     void AsyncContext::start() {
+        _waitingSelf = this;
         if (_actor && _actor != Actor::currentActor())
             _actor->wakeAsyncContext(this);     // Start on my Actor's queue
         else
@@ -75,17 +66,23 @@ namespace litecore { namespace actor {
         _calling->setObserver(this);
     }
 
+    void AsyncContext::wakeUp(AsyncContext *async) {
+        assert(async == _calling);
+        if (_waitingActor) {
+            fleece::Retained<Actor> waitingActor = std::move(_waitingActor);
+            waitingActor->wakeAsyncContext(this);
+        } else {
+            next();
+        }
+    }
+
     void AsyncContext::_gotResult() {
         _ready = true;
         auto observer = _observer;
         _observer = nullptr;
         if (observer)
             observer->wakeUp(this);
-    }
-
-
-    void Actor::_wakeAsyncContext(AsyncContext *context) {
-        context->next();
+        _waitingSelf = nullptr;
     }
 
 } }
