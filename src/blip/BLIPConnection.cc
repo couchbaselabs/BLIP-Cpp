@@ -452,7 +452,7 @@ namespace litecore { namespace blip {
                                 stringstream dump;
                                 bool withBody = BLIPMessagesLog.willLog(LogLevel::Verbose);
                                 msg->dump(dump, withBody);
-                                BLIPMessagesLog.log(LogLevel::Info, "RECEIVED: %s", dump.str().c_str());
+                                BLIPMessagesLog.log(LogLevel::Info, true, "RECEIVED: %s", dump.str().c_str());
                             }
                         }
                         
@@ -655,7 +655,7 @@ namespace litecore { namespace blip {
             stringstream dump;
             bool withBody = BLIPMessagesLog.willLog(LogLevel::Verbose);
             msg->dump(dump, withBody);
-            BLIPMessagesLog.log(LogLevel::Info, "SENDING: %s", dump.str().c_str());
+            BLIPMessagesLog.log(LogLevel::Info, true, "SENDING: %s", dump.str().c_str());
         }
 
         _io->queueMessage(msg);
