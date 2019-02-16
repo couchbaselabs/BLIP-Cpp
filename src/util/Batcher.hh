@@ -56,15 +56,17 @@ namespace litecore { namespace actor {
                 _items->reserve(_capacity ? _capacity : 200);
             }
             _items->push_back(item);
-            if (!_scheduled) {
+            if (_latency > Timer::duration(0) && _capacity > 0 &&
+                    (_items->size() == _capacity || (!_scheduled && timeSincePop() > _latency))) {
+                // I'm full, or it's the first push in a while -- schedule a pop NOW
+                LogVerbose(SyncLog, "Batcher scheduling immediate pop of %zu item(s)",
+                           _items->size());
+                _scheduled = true;
+                _actor.enqueue(_processor);
+            } else if (!_scheduled) {
                 // Schedule a pop as soon as an item is added:
                 _scheduled = true;
                 _actor.enqueueAfter(_latency, _processor);
-            }
-            if (_latency > Timer::duration(0) && _capacity > 0 && _items->size() == _capacity) {
-                // I'm full -- schedule a pop NOW
-                LogVerbose(SyncLog, "Batcher scheduling immediate pop");
-                _actor.enqueue(_processor);
             }
         }
 
@@ -75,7 +77,12 @@ namespace litecore { namespace actor {
             std::lock_guard<std::mutex> lock(_mutex);
 
             _scheduled = false;
+            _popTime = Timer::clock::now();
             return move(_items);
+        }
+
+        Timer::duration timeSincePop() const {
+            return Timer::clock::now() - _popTime;
         }
 
     private:
@@ -86,7 +93,7 @@ namespace litecore { namespace actor {
         std::mutex _mutex;
         Items _items;
         bool _scheduled {false};
-        size_t _generation {0};
+        Timer::time _popTime;
     };
 
 } }
