@@ -386,8 +386,8 @@ namespace litecore { namespace blip {
 
         
         /** WebSocketDelegate method -- Received a frame: */
-        void _onWebSocketMessages() {
-            auto messages = _incomingFrames.pop();
+        void _onWebSocketMessages(int gen =actor::AnyGen) {
+            auto messages = _incomingFrames.pop(gen);
             if (!messages)
                 return;
             try {

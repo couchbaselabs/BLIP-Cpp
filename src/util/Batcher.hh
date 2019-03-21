@@ -27,14 +27,17 @@
 
 namespace litecore { namespace actor {
 
+    static constexpr int AnyGen = INT_MAX;
+
+    
     /** A simple queue that adds objects one at a time and sends them to its target in a batch. */
     template <class ITEM>
     class Batcher {
     public:
         using Items = std::unique_ptr<std::vector<Retained<ITEM>>>;
 
-        Batcher(std::function<void()> processNow,
-                std::function<void()> processLater,
+        Batcher(std::function<void(int gen)> processNow,
+                std::function<void(int gen)> processLater,
                 Timer::duration latency ={},
                 size_t capacity = 0)
         :_processNow(processNow)
@@ -56,31 +59,36 @@ namespace litecore { namespace actor {
             if (!_scheduled) {
                 // Schedule a pop as soon as an item is added:
                 _scheduled = true;
-                _processLater();
+                _processLater(_generation);
             }
             if (_latency > Timer::duration(0) && _capacity > 0 && _items->size() == _capacity) {
                 // I'm full -- schedule a pop NOW
                 LogVerbose(SyncLog, "Batcher scheduling immediate pop");
-                _processNow();
+                _processNow(_generation);
             }
         }
+
 
         /** Removes & returns all the items from  the queue, in the order they were added,
             or nullptr if nothing has been added to the queue.
             Thread-safe. */
-        Items pop() {
+        Items pop(int gen =AnyGen) {
             std::lock_guard<std::mutex> lock(_mutex);
 
+            if (gen < _generation)
+                return {};
             _scheduled = false;
+            ++_generation;
             return move(_items);
         }
 
     private:
-        std::function<void()> _processNow, _processLater;
+        std::function<void(int gen)> _processNow, _processLater;
         Timer::duration _latency;
         size_t _capacity;
         std::mutex _mutex;
         Items _items;
+        int _generation {0};
         bool _scheduled {false};
     };
 
@@ -90,7 +98,7 @@ namespace litecore { namespace actor {
     template <class ACTOR, class ITEM>
     class ActorBatcher : public Batcher<ITEM> {
     public:
-        typedef void (ACTOR::*Processor)();
+        typedef void (ACTOR::*Processor)(int gen);
 
         /** Constructs an ActorBatcher. Typically done in the Actor subclass's constructor.
             @param actor  The Actor that owns this queue.
@@ -101,8 +109,8 @@ namespace litecore { namespace actor {
                      Processor processor,
                      Timer::duration latency ={},
                      size_t capacity = 0)
-        :Batcher<ITEM>([=]() {actor->enqueue(processor);},
-                       [=]() {actor->enqueueAfter(latency, processor);},
+        :Batcher<ITEM>([=](int gen) {actor->enqueue(processor, gen);},
+                       [=](int gen) {actor->enqueueAfter(latency, processor, gen);},
                        latency,
                        capacity)
         { }
