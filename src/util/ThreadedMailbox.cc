@@ -149,8 +149,17 @@ namespace litecore { namespace actor {
             return enqueue(f);
 
         beginLatency();
-        _delayedEventCount++;
         retain(_actor);
+
+        enqueue([this]
+        {
+            // Do this separately to avoid races where
+            // _delayedEventCount can reach -1.  Adding this
+            // to the queue bumps the size temporarily by 1
+            // so that the balancing --_delayedEventCount won't
+            // falsely decrement to zero
+           ++_delayedEventCount; 
+        });
 
         auto timer = new Timer([f, this]
         { 
