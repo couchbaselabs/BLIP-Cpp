@@ -20,6 +20,7 @@
 #include "Actor.hh"
 #include "Logging.hh"
 #include <algorithm>
+#include <sstream>
 #include "betterassert.hh"
 
 using namespace std;
@@ -43,6 +44,7 @@ namespace litecore { namespace actor {
     static char kQueueMailboxSpecificKey;
 
     static const qos_class_t kQOS = QOS_CLASS_UTILITY;
+    thread_local shared_ptr<ChannelManifest> GCDMailbox::sCurrentManifest;
 
     GCDMailbox::GCDMailbox(Actor *a, const std::string &name, GCDMailbox *parentMailbox)
     :_actor(a)
@@ -87,33 +89,47 @@ namespace litecore { namespace actor {
             block();
         } catch (const std::exception &x) {
             _actor->caughtException(x);
+            stringstream manifest;
+            sCurrentManifest->dump(manifest);
+            const auto dumped = manifest.str();
+            Warn("%s", dumped.c_str());
         }
     }
 
     
-    void GCDMailbox::enqueue(void (^block)()) {
+    void GCDMailbox::enqueue(const string& methodName, void (^block)()) {
         beginLatency();
         ++_eventCount;
         retain(_actor);
+        shared_ptr<ChannelManifest> currentManifest = sCurrentManifest ? sCurrentManifest : std::make_shared<ChannelManifest>();
+        currentManifest->addEnqueueCall(methodName);
         auto wrappedBlock = ^{
+            currentManifest->addExecution(methodName);
+            sCurrentManifest = currentManifest;
             endLatency();
             beginBusy();
             safelyCall(block);
             afterEvent();
+            sCurrentManifest.reset();
         };
         dispatch_async(_queue, wrappedBlock);
     }
 
 
-    void GCDMailbox::enqueueAfter(delay_t delay, void (^block)()) {
+    void GCDMailbox::enqueueAfter(delay_t delay, const string& methodName, void (^block)()) {
         beginLatency();
         ++_eventCount;
         retain(_actor);
+        shared_ptr<ChannelManifest> currentManifest = sCurrentManifest ? sCurrentManifest : std::make_shared<ChannelManifest>();
+        currentManifest->addEnqueueCall(methodName, delay.count());
         auto wrappedBlock = ^{
+            currentManifest->addExecution(methodName);
+            sCurrentManifest = currentManifest;
             endLatency();
             beginBusy();
             safelyCall(block);
             afterEvent();
+            sCurrentManifest.reset();
         };
         int64_t ns = std::chrono::duration_cast<std::chrono::nanoseconds>(delay).count();
         if (ns > 0)

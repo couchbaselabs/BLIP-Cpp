@@ -19,6 +19,7 @@
 #pragma once
 #include "ThreadedMailbox.hh"
 #include "Stopwatch.hh"
+#include "ChannelManifest.hh"
 #include <atomic>
 #include <functional>
 #include <string>
@@ -42,8 +43,8 @@ namespace litecore { namespace actor {
         unsigned eventCount() const                         {return _eventCount;}
 
         //void enqueue(std::function<void()> f);
-        void enqueue(void (^block)());
-        void enqueueAfter(delay_t delay, void (^block)());
+        void enqueue(const std::string& methodName, void (^block)());
+        void enqueueAfter(delay_t delay, const std::string& methodName, void (^block)());
 
         static void startScheduler(Scheduler *)             { }
 
@@ -59,6 +60,8 @@ namespace litecore { namespace actor {
         Actor *_actor;
         dispatch_queue_t _queue;
         std::atomic<int32_t> _eventCount {0};
+
+        static thread_local std::shared_ptr<ChannelManifest> sCurrentManifest;
         
 #if ACTORS_TRACK_STATS
         int32_t _callCount {0};
