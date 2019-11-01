@@ -43,8 +43,8 @@ namespace litecore { namespace actor {
         unsigned eventCount() const                         {return _eventCount;}
 
         //void enqueue(std::function<void()> f);
-        void enqueue(const std::string& methodName, void (^block)());
-        void enqueueAfter(delay_t delay, const std::string& methodName, void (^block)());
+        void enqueue(const char* methodName, void (^block)());
+        void enqueueAfter(delay_t delay, const char* methodName, void (^block)());
 
         static void startScheduler(Scheduler *)             { }
 
@@ -61,7 +61,12 @@ namespace litecore { namespace actor {
         dispatch_queue_t _queue;
         std::atomic<int32_t> _eventCount {0};
 
+#if TARGET_OS_SIMULATOR
+        static std::shared_ptr<ChannelManifest> getCurrentManifest();
+        static void setCurrentManifest(std::shared_ptr<ChannelManifest> manifest);
+#else
         static thread_local std::shared_ptr<ChannelManifest> sCurrentManifest;
+#endif
         
 #if ACTORS_TRACK_STATS
         int32_t _callCount {0};
