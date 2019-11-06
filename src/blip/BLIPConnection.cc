@@ -124,7 +124,7 @@ namespace litecore { namespace blip {
         ,Logging(BLIPLog)
         ,_connection(connection)
         ,_webSocket(webSocket)
-        ,_incomingFrames(this, &BLIPIO::_onWebSocketMessages)
+        ,_incomingFrames(this, FUNCTION_TO_QUEUE(BLIPIO::_onWebSocketMessages))
         ,_outbox(10)
         ,_outputCodec(compressionLevel)
         {
@@ -147,16 +147,16 @@ namespace litecore { namespace blip {
         }
 
         void queueMessage(MessageOut *msg) {
-            enqueue(&BLIPIO::_queueMessage, Retained<MessageOut>(msg));
+            enqueue(FUNCTION_TO_QUEUE(BLIPIO::_queueMessage), Retained<MessageOut>(msg));
         }
 
         void setRequestHandler(std::string profile, bool atBeginning,
                                Connection::RequestHandler handler) {
-            enqueue(&BLIPIO::_setRequestHandler, profile, atBeginning, handler);
+            enqueue(FUNCTION_TO_QUEUE(BLIPIO::_setRequestHandler), profile, atBeginning, handler);
         }
 
         void close(CloseCode closeCode = kCodeNormal, slice message =nullslice) {
-            enqueue(&BLIPIO::_close, closeCode, alloc_slice(message));
+            enqueue(FUNCTION_TO_QUEUE(BLIPIO::_close), closeCode, alloc_slice(message));
         }
 
         WebSocket* webSocket() const {
@@ -193,11 +193,11 @@ namespace litecore { namespace blip {
         }
 
         virtual void onWebSocketClose(websocket::CloseStatus status) override {
-            enqueue(&BLIPIO::_closed, status);
+            enqueue(FUNCTION_TO_QUEUE(BLIPIO::_closed), status);
         }
 
         virtual void onWebSocketWriteable() override {
-            enqueue(&BLIPIO::_onWebSocketWriteable);
+            enqueue(FUNCTION_TO_QUEUE(BLIPIO::_onWebSocketWriteable));
         }
 
         virtual void onWebSocketMessage(websocket::Message *message) override {

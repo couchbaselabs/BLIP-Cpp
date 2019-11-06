@@ -24,6 +24,7 @@
 #include "Timer.hh"
 #include "Logging.hh"
 #include "Channel.cc"       // Brings in the definitions of the template methods
+#include <sstream>
 
 using namespace std;
 
@@ -112,6 +113,7 @@ namespace litecore { namespace actor {
 #pragma mark - MAILBOX:
 
     thread_local Actor* ThreadedMailbox::sCurrentActor;
+    thread_local shared_ptr<ChannelManifest> ThreadedMailbox::sCurrentManifest;
 
 
     ThreadedMailbox::ThreadedMailbox(Actor *a, const std::string &name, ThreadedMailbox *parent)
@@ -121,38 +123,47 @@ namespace litecore { namespace actor {
         Scheduler::sharedScheduler()->start();
     }
 
-    void ThreadedMailbox::enqueue(const std::function<void()> &f) {
+    void ThreadedMailbox::enqueue(const char* methodName, const std::function<void()> &f) {
         beginLatency();
         retain(_actor);
-        const auto wrappedBlock = [f, SELF]
+        shared_ptr<ChannelManifest> currentManifest = sCurrentManifest ? sCurrentManifest : std::make_shared<ChannelManifest>();
+        currentManifest->addEnqueueCall(methodName);
+        const auto wrappedBlock = [f, currentManifest, methodName, SELF]
         {
+            currentManifest->addExecution(methodName);
+            sCurrentManifest = currentManifest;
             endLatency();
             beginBusy();
             safelyCall(f);
             afterEvent();
+            sCurrentManifest.reset();
         };
 
         if (push(wrappedBlock))
             reschedule();
     }
 
-    void ThreadedMailbox::enqueueAfter(delay_t delay, const std::function<void()> &f) {
+    void ThreadedMailbox::enqueueAfter(delay_t delay, const char* methodName, const std::function<void()> &f) {
         if (delay <= delay_t::zero())
-            return enqueue(f);
+            return enqueue(methodName, f);
 
         beginLatency();
         _delayedEventCount++;
         retain(_actor);
-
-        auto timer = new Timer([f, this]
+        shared_ptr<ChannelManifest> currentManifest = sCurrentManifest ? sCurrentManifest : std::make_shared<ChannelManifest>();
+        currentManifest->addEnqueueCall(methodName, delay.count());
+        auto timer = new Timer([f, currentManifest, methodName, SELF]
         { 
-            const auto wrappedBlock = [f, SELF]
+            const auto wrappedBlock = [f, currentManifest, methodName, SELF]
             {
+                currentManifest->addExecution(methodName);
+                sCurrentManifest = currentManifest;
                 endLatency();
                 beginBusy();
                 safelyCall(f);
                 --_delayedEventCount;
                 afterEvent();
+                sCurrentManifest.reset();
             };
             
             if (push(wrappedBlock))
@@ -169,6 +180,10 @@ namespace litecore { namespace actor {
             f();
         } catch(std::exception& x) {
             _actor->caughtException(x);
+            stringstream manifest;
+            sCurrentManifest->dump(manifest);
+            const auto dumped = manifest.str();
+            Warn("%s", dumped.c_str());
         }
     }
 

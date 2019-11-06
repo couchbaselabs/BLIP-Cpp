@@ -107,14 +107,19 @@ namespace litecore { namespace actor {
             @param latency  How long to wait before calling the processor, after the first item
                             is added to the queue. */
         ActorBatcher(ACTOR *actor,
+                     const char* name,
                      Processor processor,
                      Timer::duration latency ={},
                      size_t capacity = 0)
-        :Batcher<ITEM>([=](int gen) {actor->enqueue(processor, gen);},
-                       [=](int gen) {actor->enqueueAfter(latency, processor, gen);},
+        :Batcher<ITEM>([=](int gen) {actor->enqueue(_name, processor, gen);},
+                       [=](int gen) {actor->enqueueAfter(latency, _name, processor, gen);},
                        latency,
                        capacity)
+        ,_name(name)
         { }
+
+    private:
+        const char* _name;
     };
 
 } }

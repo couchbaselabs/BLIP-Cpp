@@ -63,6 +63,8 @@ namespace litecore { namespace actor {
     #define ACTOR_BIND_FN(FN, ARGS)                 std::bind(FN, ARGS...)
 #endif
 
+#define FUNCTION_TO_QUEUE(METHOD) #METHOD, &METHOD
+
 
     /** Abstract base actor class. Subclasses should implement their public methods as calls to
         `enqueue` that pass the parameter values through, and name a matching private 
@@ -104,32 +106,32 @@ namespace litecore { namespace actor {
 
         /** Schedules a call to a method. */
         template <class Rcvr, class... Args>
-        void enqueue(void (Rcvr::*fn)(Args...), Args... args) {
-            _mailbox.enqueue(ACTOR_BIND_METHOD((Rcvr*)this, fn, args));
+        void enqueue(const char* methodName, void (Rcvr::*fn)(Args...), Args... args) {
+            _mailbox.enqueue(methodName, ACTOR_BIND_METHOD((Rcvr*)this, fn, args));
         }
 
         /** Schedules a call to a method, after a delay.
             Other calls scheduled after this one may end up running before it! */
         template <class Rcvr, class... Args>
-        void enqueueAfter(delay_t delay, void (Rcvr::*fn)(Args...), Args... args) {
-            _mailbox.enqueueAfter(delay, ACTOR_BIND_METHOD((Rcvr*)this, fn, args));
+        void enqueueAfter(delay_t delay, const char* methodName, void (Rcvr::*fn)(Args...), Args... args) {
+            _mailbox.enqueueAfter(delay, methodName, ACTOR_BIND_METHOD((Rcvr*)this, fn, args));
         }
 
         /** Converts a lambda into a form that runs asynchronously,
             i.e. when called it schedules a call of the orignal lambda on the actor's thread.
             Use this when registering callbacks, e.g. with a Future.*/
         template <class... Args>
-        std::function<void(Args...)> _asynchronize(std::function<void(Args...)> fn) {
+        std::function<void(Args...)> _asynchronize(const char* methodName, std::function<void(Args...)> fn) {
             Retained<Actor> ret(this);
             return [=](Args ...arg) mutable {
-                ret->_mailbox.enqueue(ACTOR_BIND_FN(fn, arg));
+                ret->_mailbox.enqueue(methodName, ACTOR_BIND_FN(fn, arg));
             };
         }
 
         template <class T>
-        auto asynchronize(T t) -> decltype(get_fun_type(&T::operator())) {
+        auto asynchronize(const char* methodName, T t) -> decltype(get_fun_type(&T::operator())) {
             decltype(get_fun_type(&T::operator())) fn = t;
-            return _asynchronize(fn);
+            return _asynchronize(methodName, fn);
         }
 
         virtual void afterEvent()                    { }
@@ -149,7 +151,7 @@ namespace litecore { namespace actor {
         }
 
         void wakeAsyncContext(AsyncContext *context) {
-            _mailbox.enqueue(ACTOR_BIND_METHOD0(context, &AsyncContext::next));
+            _mailbox.enqueue("wakeAsyncContext", ACTOR_BIND_METHOD0(context, &AsyncContext::next));
         }
 
     private:
