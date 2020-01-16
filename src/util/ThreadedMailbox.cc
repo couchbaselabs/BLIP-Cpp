@@ -64,7 +64,6 @@ namespace litecore { namespace actor {
         }
     };
     
-    static RunAsyncActor* sRunAsyncActor;
     static Scheduler* sScheduler;
     static random_device rd;
     static mt19937 sRandGen(rd());
@@ -241,13 +240,7 @@ namespace litecore { namespace actor {
 
 
     void ThreadedMailbox::runAsyncTask(void (*task)(void*), void *context) {
-        static once_flag once;
-        call_once(once, []()
-        {
-            sRunAsyncActor = new RunAsyncActor();
-            retain(sRunAsyncActor); // I grant unto thee the gift of eternal life
-        });
-
+        static RunAsyncActor* sRunAsyncActor = retain(new RunAsyncActor()); // I grant unto thee the gift of eternal life
         sRunAsyncActor->runAsync(task, context);
     }
 
