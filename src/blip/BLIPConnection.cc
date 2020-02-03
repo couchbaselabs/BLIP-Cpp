@@ -61,9 +61,9 @@ namespace litecore { namespace blip {
         MessageQueue()                          { }
         MessageQueue(size_t rsrv)               {reserve(rsrv);}
 
-        bool contains(MessageOut *msg) const    {return find(begin(), end(), msg) != end();}
+        bool contains(MessageOut *msg) const PURE   {return find(begin(), end(), msg) != end();}
 
-        MessageOut* findMessage(MessageNo msgNo, bool isResponse) const {
+        MessageOut* findMessage(MessageNo msgNo, bool isResponse) const PURE {
             auto i = find_if(begin(), end(), [&](const Retained<MessageOut> &msg) {
                 return msg->number() == msgNo && msg->isResponse() == isResponse;
             });

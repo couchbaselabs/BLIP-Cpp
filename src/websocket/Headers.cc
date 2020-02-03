@@ -77,7 +77,9 @@ namespace litecore { namespace websocket {
 
 
     void Headers::setBackingStore(alloc_slice backingStore) {
+#if DEBUG
         assert(_map.empty());
+#endif
         _backingStore = backingStore;
     }
     

@@ -89,12 +89,12 @@ namespace litecore { namespace blip {
         using slice = fleece::slice;
         using alloc_slice = fleece::alloc_slice;
         
-        bool isResponse() const             {return type() >= kResponseType;}
-        bool isError() const                {return type() == kErrorType;}
-        bool urgent() const                 {return hasFlag(kUrgent);}
-        bool noReply() const                {return hasFlag(kNoReply);}
+        bool isResponse() const PURE             {return type() >= kResponseType;}
+        bool isError() const PURE                {return type() == kErrorType;}
+        bool urgent() const PURE                 {return hasFlag(kUrgent);}
+        bool noReply() const PURE                {return hasFlag(kNoReply);}
 
-        MessageNo number() const            {return _number;}
+        MessageNo number() const PURE            {return _number;}
 
     protected:
         friend class BLIPIO;
@@ -109,13 +109,13 @@ namespace litecore { namespace blip {
             //Log("DELETE Message<%p, %s #%llu>", this, typeName(), _number);
         }
 
-        FrameFlags flags() const            {return _flags;}
-        bool hasFlag(FrameFlags f) const    {return (_flags & f) != 0;}
-        bool isAck() const                  {return type() == kAckRequestType ||
+        FrameFlags flags() const PURE            {return _flags;}
+        bool hasFlag(FrameFlags f) const PURE    {return (_flags & f) != 0;}
+        bool isAck() const PURE                  {return type() == kAckRequestType ||
                                                     type() == kAckResponseType;}
-        virtual bool isIncoming() const     {return false;}
-        MessageType type() const            {return (MessageType)(_flags & kTypeMask);}
-        const char* typeName() const        {return kMessageTypeNames[type()];}
+        virtual bool isIncoming() const PURE     {return false;}
+        MessageType type() const PURE            {return (MessageType)(_flags & kTypeMask);}
+        const char* typeName() const PURE        {return kMessageTypeNames[type()];}
 
         void sendProgress(MessageProgress::State state,
                           MessageSize bytesSent, MessageSize bytesReceived,
@@ -126,7 +126,7 @@ namespace litecore { namespace blip {
         void dumpHeader(std::ostream&);
         void writeDescription(slice payload, std::ostream&);
 
-        static const char* findProperty(slice payload, const char *propertyName);
+        static const char* findProperty(slice payload, const char *propertyName) PURE;
 
         FrameFlags _flags;
         MessageNo _number;
@@ -138,12 +138,12 @@ namespace litecore { namespace blip {
     class MessageIn : public Message {
     public:
         /** Gets a property value */
-        slice property(slice property) const;
-        long intProperty(slice property, long defaultValue =0) const;
-        bool boolProperty(slice property, bool defaultValue =false) const;
+        slice property(slice property) const PURE;
+        long intProperty(slice property, long defaultValue =0) const PURE;
+        bool boolProperty(slice property, bool defaultValue =false) const PURE;
 
         /** Returns information about an error (if this message is an error.) */
-        Error getError() const;
+        Error getError() const PURE;
 
         void setProgressCallback(MessageProgressCallback callback);
 
