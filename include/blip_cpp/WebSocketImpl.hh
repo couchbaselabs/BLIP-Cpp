@@ -97,9 +97,9 @@ namespace litecore { namespace websocket {
                             unsigned int remainingBytes,
                             int opCode,
                             bool fin);
-        bool receivedMessage(int opCode, const fleece::alloc_slice &message);
-        bool receivedClose(fleece::slice);
-        void deliverMessageToDelegate(fleece::slice data, bool binary);
+        bool receivedMessage(int opCode, fleece::alloc_slice &&message);
+        bool receivedClose(fleece::alloc_slice);
+        void deliverMessageToDelegate(fleece::alloc_slice &&data, bool binary);
         int heartbeatInterval() const;
         void schedulePing();
         void sendPing();

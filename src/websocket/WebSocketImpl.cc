@@ -45,18 +45,16 @@ namespace litecore { namespace websocket {
     
     class MessageImpl : public Message {
     public:
-        MessageImpl(WebSocketImpl *ws, slice data, bool binary)
-        :Message(data, binary)
-        ,_size(data.size)
+        MessageImpl(WebSocketImpl *ws NONNULL, alloc_slice &&data, bool binary)
+        :Message(move(data), binary)
         ,_webSocket(ws)
         { }
 
         ~MessageImpl() {
-            _webSocket->receiveComplete(_size);
+            _webSocket->receiveComplete(data.size);
         }
 
     private:
-        size_t const _size;
         WebSocketImpl* const _webSocket;
     };
 
@@ -208,7 +206,7 @@ namespace litecore { namespace websocket {
             }
         }
         if (!_framing)
-            deliverMessageToDelegate(data, true);
+            deliverMessageToDelegate(alloc_slice(data), true);
 
         if (completedBytes > 0)
             receiveComplete(completedBytes);
@@ -243,7 +241,7 @@ namespace litecore { namespace websocket {
         if (fin && remainingBytes == 0) {
             _curMessage.shorten(_curMessageLength);
             bool ok = receivedMessage(_curOpCode, move(_curMessage));
-            DebugAssert(!_curMessage);
+            _curMessage.reset();
             _curMessageLength = 0;
             return ok;
         }
@@ -252,14 +250,14 @@ namespace litecore { namespace websocket {
 
 
     // Called from handleFragment, with the mutex locked
-    bool WebSocketImpl::receivedMessage(int opCode, const alloc_slice &message) {
+    bool WebSocketImpl::receivedMessage(int opCode, alloc_slice &&message) {
         switch (opCode) {
             case TEXT:
                 if (!ClientProtocol::isValidUtf8((unsigned char*)message.buf, message.size))
                     return false;
                 // fall through:
             case BINARY:
-                deliverMessageToDelegate(message, (opCode==BINARY));
+                deliverMessageToDelegate(move(message), (opCode==BINARY));
                 return true;
             case CLOSE:
                 return receivedClose(message);
@@ -283,10 +281,10 @@ namespace litecore { namespace websocket {
     }
 
 
-    void WebSocketImpl::deliverMessageToDelegate(slice data, bool binary) {
+    void WebSocketImpl::deliverMessageToDelegate(alloc_slice &&data, bool binary) {
         logVerbose("Received %zu-byte message", data.size);
         _deliveredBytes += data.size;
-        Retained<Message> message(new MessageImpl(this, data, true));
+        Retained<Message> message(new MessageImpl(this, move(data), true));
         delegate().onWebSocketMessage(message);
     }
 
@@ -382,7 +380,7 @@ namespace litecore { namespace websocket {
 
 
     // Handles a close message received from the peer. (Mutex is locked!)
-    bool WebSocketImpl::receivedClose(slice message) {
+    bool WebSocketImpl::receivedClose(alloc_slice message) {
         if (_closeReceived)
             return false;
         _closeReceived = true;
