@@ -33,9 +33,6 @@ namespace litecore { namespace websocket {
 
     static constexpr size_t kSendBufferSize = 64 * 1024;
 
-    // Timeout for WebSocket connection (until HTTP response received)
-    constexpr long WebSocketImpl::kConnectTimeoutSecs;
-
     // Default interval at which to send PING messages (configurable via options)
     static constexpr auto kDefaultHeartbeatInterval = chrono::seconds(5 * 60);
 
@@ -255,7 +252,7 @@ namespace litecore { namespace websocket {
 
 
     // Called from handleFragment, with the mutex locked
-    bool WebSocketImpl::receivedMessage(int opCode, alloc_slice message) {
+    bool WebSocketImpl::receivedMessage(int opCode, const alloc_slice &message) {
         switch (opCode) {
             case TEXT:
                 if (!ClientProtocol::isValidUtf8((unsigned char*)message.buf, message.size))

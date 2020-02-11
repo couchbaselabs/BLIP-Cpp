@@ -49,9 +49,9 @@ namespace litecore { namespace blip {
             kReceivingReply,        // Reply is being received
             kComplete,              // Delivery (and receipt, if not noreply) complete.
             kDisconnected           // Socket disconnected before delivery or receipt completed
-        } state;
-        MessageSize bytesSent;
-        MessageSize bytesReceived;
+        }                   state;
+        MessageSize         bytesSent;
+        MessageSize         bytesReceived;
         Retained<MessageIn> reply;
     };
 
@@ -59,9 +59,9 @@ namespace litecore { namespace blip {
 
 
     struct Error {
-        const fleece::slice domain;
-        const int code {0};
-        const fleece::slice message;
+        fleece::slice const domain;
+        int const           code {0};
+        fleece::slice const message;
 
         Error()  { }
         Error(fleece::slice domain_, int code_, fleece::slice msg =fleece::nullslice)
@@ -79,7 +79,7 @@ namespace litecore { namespace blip {
         { }
 
     private:
-        const fleece::alloc_slice _messageBuf;
+        fleece::alloc_slice const _messageBuf;
     };
 
 
@@ -89,12 +89,12 @@ namespace litecore { namespace blip {
         using slice = fleece::slice;
         using alloc_slice = fleece::alloc_slice;
         
-        bool isResponse() const PURE             {return type() >= kResponseType;}
-        bool isError() const PURE                {return type() == kErrorType;}
-        bool urgent() const PURE                 {return hasFlag(kUrgent);}
-        bool noReply() const PURE                {return hasFlag(kNoReply);}
+        bool isResponse() const FLPURE             {return type() >= kResponseType;}
+        bool isError() const FLPURE                {return type() == kErrorType;}
+        bool urgent() const FLPURE                 {return hasFlag(kUrgent);}
+        bool noReply() const FLPURE                {return hasFlag(kNoReply);}
 
-        MessageNo number() const PURE            {return _number;}
+        MessageNo number() const FLPURE            {return _number;}
 
     protected:
         friend class BLIPIO;
@@ -109,13 +109,13 @@ namespace litecore { namespace blip {
             //Log("DELETE Message<%p, %s #%llu>", this, typeName(), _number);
         }
 
-        FrameFlags flags() const PURE            {return _flags;}
-        bool hasFlag(FrameFlags f) const PURE    {return (_flags & f) != 0;}
-        bool isAck() const PURE                  {return type() == kAckRequestType ||
+        FrameFlags flags() const FLPURE            {return _flags;}
+        bool hasFlag(FrameFlags f) const FLPURE    {return (_flags & f) != 0;}
+        bool isAck() const FLPURE                  {return type() == kAckRequestType ||
                                                     type() == kAckResponseType;}
-        virtual bool isIncoming() const PURE     {return false;}
-        MessageType type() const PURE            {return (MessageType)(_flags & kTypeMask);}
-        const char* typeName() const PURE        {return kMessageTypeNames[type()];}
+        virtual bool isIncoming() const FLPURE     {return false;}
+        MessageType type() const FLPURE            {return (MessageType)(_flags & kTypeMask);}
+        const char* typeName() const FLPURE        {return kMessageTypeNames[type()];}
 
         void sendProgress(MessageProgress::State state,
                           MessageSize bytesSent, MessageSize bytesReceived,
@@ -126,7 +126,7 @@ namespace litecore { namespace blip {
         void dumpHeader(std::ostream&);
         void writeDescription(slice payload, std::ostream&);
 
-        static const char* findProperty(slice payload, const char *propertyName) PURE;
+        static const char* findProperty(slice payload, const char *propertyName) FLPURE;
 
         FrameFlags _flags;
         MessageNo _number;
@@ -138,12 +138,12 @@ namespace litecore { namespace blip {
     class MessageIn : public Message {
     public:
         /** Gets a property value */
-        slice property(slice property) const PURE;
-        long intProperty(slice property, long defaultValue =0) const PURE;
-        bool boolProperty(slice property, bool defaultValue =false) const PURE;
+        slice property(slice property) const FLPURE;
+        long intProperty(slice property, long defaultValue =0) const FLPURE;
+        bool boolProperty(slice property, bool defaultValue =false) const FLPURE;
 
         /** Returns information about an error (if this message is an error.) */
-        Error getError() const PURE;
+        Error getError() const FLPURE;
 
         void setProgressCallback(MessageProgressCallback callback);
 

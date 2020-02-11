@@ -101,7 +101,7 @@ namespace litecore { namespace websocket {
         CloseStatus(CloseReason reason_, int code_, fleece::slice message_)
         :CloseStatus(reason_, code_, fleece::alloc_slice(message_)) { }
 
-        bool isNormal() const {
+        bool isNormal() const FLPURE {
             return reason == kWebSocketClose && (code == kCodeNormal || code == kCodeGoingAway);
         }
 
@@ -119,10 +119,10 @@ namespace litecore { namespace websocket {
     /** Abstract class representing a WebSocket connection. */
     class WebSocket : public RefCounted, public fleece::InstanceCounted {
     public:
-        const URL& url() const                      {return _url;}
-        Role role() const                           {return _role;}
+        const URL& url() const FLPURE                      {return _url;}
+        Role role() const FLPURE                           {return _role;}
         Delegate& delegate() const;
-        bool hasDelegate() const                    {return _delegate != nullptr;}
+        bool hasDelegate() const FLPURE                    {return _delegate != nullptr;}
 
         virtual std::string name() const {
             return std::string(role() == Role::Server ? "<-" : "->") + (std::string)url();
@@ -132,37 +132,42 @@ namespace litecore { namespace websocket {
         void connect(Delegate *delegate);
 
         /** Sends a message. Callable from any thread.
-            Returns false if the amount of buffered data is growing too large; the caller should
-            then stop sending until it gets an onWebSocketWriteable delegate call. */
-        virtual bool send(fleece::slice message, bool binary =true) =0;
+            Returns false if the amount of buffered data is growing too large; the message will be
+            sent, but the caller should not send more until it gets an onWebSocketWriteable call. */
+        virtual bool send(fleece::slice message, bool binary =true) MUST_USE_RESULT =0;
 
         /** Closes the WebSocket. Callable from any thread. */
         virtual void close(int status =kCodeNormal, fleece::slice message =fleece::nullslice) =0;
 
     protected:
-        WebSocket(const URL &url, Role role);
-        virtual ~WebSocket();
+        WebSocket(URL url, Role role);
+        virtual ~WebSocket() =default;
 
         /** Called by the public connect(Delegate*) method. This should open the WebSocket. */
         virtual void connect() =0;
 
         /** Clears the delegate; any future calls to delegate() will fail. Call after closing. */
-        void clearDelegate()                        {_delegate = nullptr;}
+        void clearDelegate()                                {_delegate = nullptr;}
         
     private:
-        const URL _url;
-        const Role _role;
-        Delegate *_delegate {nullptr};
+        URL const                   _url;
+        Role const                  _role;
+        Delegate*                   _delegate {nullptr};
     };
 
 
+    /** An incoming message delivered from a WebSocket. */
     class Message : public RefCounted {
     public:
-        Message(fleece::slice d, bool b)        :data(d), binary(b) {}
-        Message(fleece::alloc_slice d, bool b)  :data(d), binary(b) {}
+        Message(fleece::slice data_, bool binary_)       :data(data_), binary(binary_) {}
+        Message(fleece::alloc_slice data_, bool binary_) :data(std::move(data_)), binary(binary_) {}
 
-        const fleece::alloc_slice data;
-        const bool binary;
+        fleece::alloc_slice const   data;
+        bool const                  binary;
+
+    private:
+        Message(const Message&) =delete;
+        Message& operator=(const Message&) =delete;
     };
 
 
@@ -171,7 +176,7 @@ namespace litecore { namespace websocket {
         These callbacks are made on an undefined thread managed by the WebSocketProvider! */
     class Delegate {
     public:
-        virtual ~Delegate() { }
+        virtual ~Delegate() =default;
 
         virtual void onWebSocketGotHTTPResponse(int status, const Headers &headers) { }
         virtual void onWebSocketConnect() =0;

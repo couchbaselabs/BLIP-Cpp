@@ -40,7 +40,7 @@ namespace litecore { namespace actor {
             The call happens on an unspecified background thread.
             It should not block, or it will delay all other timers from firing.
             It may call the Timer API, including re-scheduling itself. */
-        Timer(callback cb)              :_callback(cb) { }
+        Timer(callback cb)              :_callback(std::move(cb)) { }
 
         /** Destructs a timer. If the timer was scheduled, and the destructor is called just as
             it fires, it is possible for the callback to be running (on another thread) while this

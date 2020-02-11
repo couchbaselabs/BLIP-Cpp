@@ -38,24 +38,21 @@ namespace litecore { namespace websocket {
     LogDomain WSLogDomain("WS", LogLevel::Warning);
 
 
-    WebSocket::WebSocket(const alloc_slice &a, Role role)
-    :_url(a)
+    WebSocket::WebSocket(URL url, Role role)
+    :_url(url)
     ,_role(role)
     { }
 
 
-    WebSocket::~WebSocket()
-    { }
-
-
     Delegate& WebSocket::delegate() const {
-        DebugAssert(_delegate); return *_delegate;
+        DebugAssert(_delegate);
+        return *_delegate;
     }
 
 
     void WebSocket::connect(Delegate *delegate) {
-        DebugAssert(!_delegate);
-        DebugAssert(delegate);
+        Assert(!_delegate);
+        Assert(delegate);
         _delegate = delegate;
         connect();
     }

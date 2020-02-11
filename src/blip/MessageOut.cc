@@ -38,7 +38,7 @@ namespace litecore { namespace blip {
                            MessageNo number)
     :Message(flags, number)
     ,_connection(connection)
-    ,_contents(payload, dataSource)
+    ,_contents(move(payload), move(dataSource))
     { }
 
 
@@ -155,11 +155,11 @@ namespace litecore { namespace blip {
 
 
     MessageOut::Contents::Contents(alloc_slice payload, MessageDataSource dataSource)
-    :_payload(payload)
-    ,_unsentPayload(payload.buf, payload.size)
-    ,_dataSource(dataSource)
+    :_payload(move(payload))
+    ,_unsentPayload(_payload.buf, _payload.size)
+    ,_dataSource(move(dataSource))
     {
-        DebugAssert(payload.size <= UINT32_MAX);
+        DebugAssert(_payload.size <= UINT32_MAX);
     }
 
 

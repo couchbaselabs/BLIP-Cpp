@@ -27,10 +27,9 @@
 #include "varint.hh"
 #include "Instrumentation.hh"
 #include <algorithm>
-#include <assert.h>
 #include <sstream>
-
 #include <iostream>
+#include "betterassert.hh"
 
 using namespace std;
 using namespace fleece;
@@ -143,7 +142,7 @@ namespace litecore { namespace blip {
     ,_connection(connection)
     ,_outgoingSize(outgoingSize)
     {
-        _onProgress = onProgress;
+        _onProgress = move(onProgress);
     }
 
 
@@ -301,7 +300,7 @@ namespace litecore { namespace blip {
 
     void MessageIn::setProgressCallback(MessageProgressCallback callback) {
         lock_guard<mutex> lock(_receiveMutex);
-        _onProgress = callback;
+        _onProgress = move(callback);
     }
 
 

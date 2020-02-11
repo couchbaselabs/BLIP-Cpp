@@ -56,11 +56,11 @@ namespace litecore { namespace blip {
                    const fleece::AllocedDict &options,
                    ConnectionDelegate&);
 
-        const std::string& name() const                         {return _name;}
+        const std::string& name() const FLPURE                         {return _name;}
 
-        websocket::Role role() const                            {return _role;}
+        websocket::Role role() const FLPURE                            {return _role;}
 
-        ConnectionDelegate& delegate() const                    {return _delegate;}
+        ConnectionDelegate& delegate() const FLPURE                    {return _delegate;}
 
         void start();
 
@@ -80,7 +80,7 @@ namespace litecore { namespace blip {
         void close(websocket::CloseCode =websocket::kCodeNormal,
                    fleece::slice message =fleece::nullslice);
 
-        State state()                                           {return _state;}
+        State state() FLPURE                                           {return _state;}
 
         virtual std::string loggingIdentifier() const override  {return _name;}
 
@@ -114,7 +114,7 @@ namespace litecore { namespace blip {
         The delegate methods are called on undefined threads, and should not block. */
     class ConnectionDelegate {
     public:
-        virtual ~ConnectionDelegate()                           { }
+        virtual ~ConnectionDelegate() =default;
 
         /** Called when the HTTP response arrives (just before onConnect or onClose). */
         virtual void onHTTPResponse(int status, const websocket::Headers &headers) { }

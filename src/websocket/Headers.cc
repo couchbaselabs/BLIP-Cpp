@@ -22,10 +22,11 @@
 #include "betterassert.hh"
 
 namespace litecore { namespace websocket {
+    using namespace std;
     using namespace fleece;
 
     Headers::Headers(fleece::alloc_slice encoded)
-    :_backingStore(encoded)
+    :_backingStore(move(encoded))
     {
         readFrom(Value::fromData(encoded).asDict());
     }
@@ -42,21 +43,23 @@ namespace litecore { namespace websocket {
 
 
     Headers::Headers(Headers &&other)
-    :_map(std::move(other._map))
-    ,_backingStore(std::move(other._backingStore))
-    ,_writer(std::move(other._writer))
+    :_map(move(other._map))
+    ,_backingStore(move(other._backingStore))
+    ,_writer(move(other._writer))
     { }
 
 
     Headers& Headers::operator= (const Headers &other) {
-        clear();
-        if (other._writer.length() == 0) {
-            _map = other._map;
-            _backingStore = other._backingStore;
-        } else {
-            setBackingStore(other._backingStore);
-            for (auto &entry : other._map)
-                add(entry.first, entry.second);
+        if (&other != this) {
+            clear();
+            if (other._writer.length() == 0) {
+                _map = other._map;
+                _backingStore = other._backingStore;
+            } else {
+                setBackingStore(other._backingStore);
+                for (auto &entry : other._map)
+                    add(entry.first, entry.second);
+            }
         }
         return *this;
     }
@@ -77,10 +80,8 @@ namespace litecore { namespace websocket {
 
 
     void Headers::setBackingStore(alloc_slice backingStore) {
-#if DEBUG
         assert(_map.empty());
-#endif
-        _backingStore = backingStore;
+        _backingStore = move(backingStore);
     }
     
     
@@ -125,8 +126,8 @@ namespace litecore { namespace websocket {
 
 
     void Headers::forEach(fleece::function_ref<void(slice,slice)> callback) const {
-        for (auto i = _map.begin(); i != _map.end(); ++i)
-            callback(i->first, i->second);
+        for (auto &[header, value] : _map)
+            callback(header, value);
     }
 
 

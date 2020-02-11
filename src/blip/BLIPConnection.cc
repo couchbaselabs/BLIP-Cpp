@@ -29,12 +29,12 @@
 #include "varint.hh"
 #include "PlatformCompat.hh"
 #include <algorithm>
-#include <assert.h>
 #include <atomic>
 #include <mutex>
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include "betterassert.hh"
 
 using namespace std;
 using namespace fleece;
@@ -61,9 +61,9 @@ namespace litecore { namespace blip {
         MessageQueue()                          { }
         MessageQueue(size_t rsrv)               {reserve(rsrv);}
 
-        bool contains(MessageOut *msg) const PURE   {return find(begin(), end(), msg) != end();}
+        bool contains(MessageOut *msg) const FLPURE   {return find(begin(), end(), msg) != end();}
 
-        MessageOut* findMessage(MessageNo msgNo, bool isResponse) const PURE {
+        MessageOut* findMessage(MessageNo msgNo, bool isResponse) const FLPURE {
             auto i = find_if(begin(), end(), [&](const Retained<MessageOut> &msg) {
                 return msg->number() == msgNo && msg->isResponse() == isResponse;
             });
@@ -152,7 +152,7 @@ namespace litecore { namespace blip {
 
         void setRequestHandler(std::string profile, bool atBeginning,
                                Connection::RequestHandler handler) {
-            enqueue(&BLIPIO::_setRequestHandler, profile, atBeginning, handler);
+            enqueue(&BLIPIO::_setRequestHandler, move(profile), atBeginning, move(handler));
         }
 
         void close(CloseCode closeCode = kCodeNormal, slice message =nullslice) {

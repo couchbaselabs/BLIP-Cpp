@@ -41,8 +41,8 @@ namespace litecore { namespace actor {
                 std::function<void(int gen)> processLater,
                 Timer::duration latency ={},
                 size_t capacity = 0)
-        :_processNow(processNow)
-        ,_processLater(processLater)
+        :_processNow(move(processNow))
+        ,_processLater(move(processLater))
         ,_latency(latency)
         ,_capacity(capacity)
         { }
