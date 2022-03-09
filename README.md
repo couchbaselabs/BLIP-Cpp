@@ -1,3 +1,5 @@
+⚠️ This repo has been merged into [Couchbase Lite Core](https://github.com/couchbase/couchbase-lite-core/tree/master/Networking/BLIP) and will no longer be updated.
+
 # BLIP-Cpp
 
 ![BLIP logo](docs/logo.png)
